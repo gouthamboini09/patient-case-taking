@@ -1,3 +1,5 @@
+// In production set VITE_API_URL to the backend address (no trailing slash); locally the Vite proxy is used.
+const BASE = `${(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}/api`
 const TOKEN_KEY = 'pct_token'
 const USER_KEY = 'pct_user'
 
@@ -12,7 +14,7 @@ export const session = {
 }
 
 async function request(path, options = {}) {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
       ...(options.body && !(options.body instanceof URLSearchParams) ? { 'Content-Type': 'application/json' } : {}),
@@ -48,7 +50,7 @@ export const api = {
   updateCase: (id, body) => request(`/cases/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   audit: () => request('/audit'),
   async openPdf(id) {
-    const res = await fetch(`/api/cases/${id}/pdf`, { headers: { Authorization: `Bearer ${session.token}` } })
+    const res = await fetch(`${BASE}/cases/${id}/pdf`, { headers: { Authorization: `Bearer ${session.token}` } })
     const blob = await res.blob()
     window.open(URL.createObjectURL(blob), '_blank')
   },

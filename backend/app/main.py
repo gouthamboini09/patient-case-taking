@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,14 +30,22 @@ def seed():
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     seed()
+    if os.getenv("SEED_DEMO", "").lower() in ("1", "true", "yes"):
+        from .demo import load_demo
+        db = SessionLocal()
+        try:
+            load_demo(db)
+        finally:
+            db.close()
     yield
 
 
 app = FastAPI(title="Patient Case-Taking Software", version="1.0.0",
               description="Structured clinical case-taking with automatic triage and red-flag alerts.",
               lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://localhost:3000"],
-                   allow_methods=["*"], allow_headers=["*"], allow_credentials=True)
+# Comma-separated list in CORS_ORIGINS; "*" (default) is fine because auth uses a Bearer header, not cookies.
+ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=["*"], allow_headers=["*"])
 
 for r in (auth_routes.router, patients.router, cases.router, analytics.router):
     app.include_router(r)
