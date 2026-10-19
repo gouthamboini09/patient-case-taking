@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      DATABASE_URL: sqlite:////data/casetaking.db
+    volumes:
+      - dbdata:/data
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+volumes:
+  dbdata:
